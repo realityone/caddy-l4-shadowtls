@@ -62,7 +62,7 @@ func (m *MatchPassword) Match(hello *tls.ClientHelloInfo) bool {
 	}
 	helloBytes := cx.GetVar(ClientHelloBytesKey).([]byte)
 	matchPassword := m.verifyShadowTLSClientHello(helloBytes, m.Password)
-	m.logger.Info("client hello result", zap.Bool("match_password", matchPassword))
+	m.logger.Debug("client hello result", zap.Bool("match_password", matchPassword))
 	if matchPassword {
 		cx.SetVar(ClientHelloPasswordKey, m.Password)
 	}
