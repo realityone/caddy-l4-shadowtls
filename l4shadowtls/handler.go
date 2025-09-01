@@ -86,6 +86,11 @@ func (h *ShadowTLSHandler) Handle(down *layer4.Connection, next layer4.Handler) 
 	}
 	defer handshakeConn.Close()
 
+	// drain the first client hello frame.
+	if _, err := readTLSFrame(down); err != nil {
+		h.logger.Error("failed to drain client hello frame", zap.Error(err))
+		return err
+	}
 	h.proxy(down, handshakeConn)
 	return nil
 }
@@ -396,10 +401,6 @@ func copyByFrameUntilHmacMatches(downReader io.Reader, handshakeWriter io.Writer
 		frame, err := readTLSFrame(downReader)
 		if err != nil {
 			return nil, err
-		}
-
-		if frame[0] == 22 {
-			continue
 		}
 
 		if len(frame) > 9 && frame[0] == _applicationData {
