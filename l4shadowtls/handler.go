@@ -398,6 +398,10 @@ func copyByFrameUntilHmacMatches(downReader io.Reader, handshakeWriter io.Writer
 			return nil, err
 		}
 
+		if frame[0] == 22 {
+			continue
+		}
+
 		if len(frame) > 9 && frame[0] == _applicationData {
 			h0 := h.Clone()
 			h0.Write(frame[_tlsHmacHeaderSize:])
@@ -417,14 +421,15 @@ func copyByFrameUntilHmacMatches(downReader io.Reader, handshakeWriter io.Writer
 }
 func copyByFrameWithModification(ctx context.Context, handshakeReader io.Reader, downWriter io.Writer, h ShortHMAC, key []byte) error {
 	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
 		frame, err := readTLSFrame(handshakeReader)
 		if err != nil {
-			select {
-			case <-ctx.Done():
-				return nil
-			default:
-				return err
-			}
+			return err
 		}
 
 		if frame[0] == _applicationData {
